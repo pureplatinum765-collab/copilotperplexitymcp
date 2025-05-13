@@ -1,49 +1,43 @@
-swagger: '2.0'
+swagger: "2.0"
+
 info:
-  title: MCP Azure Server
-  description: Minimal MCP server for Copilot Studio
-  version: 1.0.0
-host: YOUR-WEB-APP-NAME.azurewebsites.net
+  title: Perplexity MCP Connector
+  version: "1.0"
+  description: Server‑Sent Events endpoint that advertises MCP tools to Microsoft Copilot Studio.
+
+# ─── CHANGE THIS ───────────────────────────────────────────────────────────
+host: perplexmcpcopilot-gcaba9h2d5g6azfx.uksouth-01.azurewebsites.net
+# ───────────────────────────────────────────────────────────────────────────
 basePath: /
 schemes:
   - https
-definitions:
-  QueryResponse:
-    type: object
-    properties:
-      jsonrpc:
-        type: string
-      id:
-        type: string
-      method:
-        type: string
-      params:
-        type: object
-      result:
-        type: object
-      error:
-        type: object
+
+# The stream is plain SSE; no JSON parsing.
+produces:
+  - text/event-stream
+
 paths:
   /sse:
     get:
-      summary: MCP Server SSE stream
-      description: Opens a long‑lived SSE stream that Copilot Studio consumes to discover tools and receive results.
+      x-ms-sse: true            # tells Power Platform this is a streaming op
+      operationId: StreamSse
+      summary: MCP SSE Stream
+      description: >
+        Returns the MCP tool list as a Server‑Sent Event and then closes.
+        Copilot Studio re‑opens this endpoint whenever it needs updates.
+      tags:
+        - Agentic               # required for MCP
+        - McpSse                # required for MCP
       parameters:
-        - in: query
-          name: sessionId
+        - name: sessionId
+          in: query
           type: string
           required: false
-          description: Arbitrary session correlation ID
-      produces:
-        - application/json
+          description: Optional correlation ID
       responses:
-        '200':
-          description: Immediate HTTP response; SSE events continue on the same connection
-          schema:
-            $ref: '#/definitions/QueryResponse'
-      operationId: InvokeMCP
-      tags:
-        - Agentic
-        - McpSse
+        "200":
+          description: Stream opened
+          # (no schema block → runtime accepts raw text)
+
 securityDefinitions: {}
 security: []
