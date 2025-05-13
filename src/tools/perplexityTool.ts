@@ -29,7 +29,7 @@ export const perplexityTool: McpTool<PerplexityInput, PerplexityOutput> = {
       }
     }
   },
-  async invoke({ prompt, model = 'sonar-small-online' }) {
+  async invoke({ prompt, model = 'sonar' }) {
     const resp = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
