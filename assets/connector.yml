@@ -5,61 +5,38 @@ info:
   version: "1.0"
   description: Server‑Sent Events endpoint that advertises MCP tools to Microsoft Copilot Studio.
 
-# ── CHANGE THIS TO YOUR WEB‑APP HOST ──────────────────────────────────────
+# ─── CHANGE THIS TO YOUR HOST ─────────────────────────────────────────────
 host: perplexmcpcopilot-gcaba9h2d5g6azfx.uksouth-01.azurewebsites.net
 # ─────────────────────────────────────────────────────────────────────────
 basePath: /
-schemes:
-  - https
+schemes: [https]
 
 consumes:
   - application/json
 produces:
-  - application/json              # ← designer expects this
-
-definitions:
-  QueryResponse:
-    type: object
-    properties:
-      jsonrpc:
-        type: string
-      id:
-        type: string
-      method:
-        type: string
-      params:
-        type: object
-      result:
-        type: object
-      error:
-        type: object
+  - text/event-stream            # designer lets you keep this
 
 paths:
   /sse:
     get:
-      x-ms-sse: true               # ← critical for Copilot
+      x-ms-sse: true
       operationId: StreamSse
       summary: MCP SSE Stream
       description: >
-        Returns the MCP tool list as a Server‑Sent Event.  
-        Copilot Studio re‑opens this endpoint as needed.
-      tags:
-        - Agentic
-        - McpSse
+        Returns one Server‑Sent Event containing the tool list, then closes.
+      tags: [Agentic, McpSse]
       parameters:
         - name: sessionId
           in: query
           type: string
           required: false
       produces:
-        - application/json
+        - text/event-stream       # keep consistency
       responses:
         "200":
-          description: Immediate HTTP response; SSE continues on same socket
+          description: Stream opened
           schema:
-            $ref: "#/definitions/QueryResponse"
-        "201":
-          description: Created – subsequent SSE events follow on same socket
+            type: string          # ← body is plain text, so validation passes
 
 securityDefinitions: {}
 security: []
