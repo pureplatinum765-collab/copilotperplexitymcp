@@ -5,39 +5,61 @@ info:
   version: "1.0"
   description: Server‑Sent Events endpoint that advertises MCP tools to Microsoft Copilot Studio.
 
-# ─── CHANGE THIS ───────────────────────────────────────────────────────────
+# ── CHANGE THIS TO YOUR WEB‑APP HOST ──────────────────────────────────────
 host: perplexmcpcopilot-gcaba9h2d5g6azfx.uksouth-01.azurewebsites.net
-# ───────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────
 basePath: /
 schemes:
   - https
 
-# The stream is plain SSE; no JSON parsing.
+consumes:
+  - application/json
 produces:
-  - text/event-stream
+  - application/json              # ← designer expects this
+
+definitions:
+  QueryResponse:
+    type: object
+    properties:
+      jsonrpc:
+        type: string
+      id:
+        type: string
+      method:
+        type: string
+      params:
+        type: object
+      result:
+        type: object
+      error:
+        type: object
 
 paths:
   /sse:
     get:
-      x-ms-sse: true            # tells Power Platform this is a streaming op
+      x-ms-sse: true               # ← critical for Copilot
       operationId: StreamSse
       summary: MCP SSE Stream
       description: >
-        Returns the MCP tool list as a Server‑Sent Event and then closes.
-        Copilot Studio re‑opens this endpoint whenever it needs updates.
+        Returns the MCP tool list as a Server‑Sent Event.  
+        Copilot Studio re‑opens this endpoint as needed.
       tags:
-        - Agentic               # required for MCP
-        - McpSse                # required for MCP
+        - Agentic
+        - McpSse
       parameters:
         - name: sessionId
           in: query
           type: string
           required: false
-          description: Optional correlation ID
+      produces:
+        - application/json
       responses:
         "200":
-          description: Stream opened
-          # (no schema block → runtime accepts raw text)
+          description: Immediate HTTP response; SSE continues on same socket
+          schema:
+            $ref: "#/definitions/QueryResponse"
+        "201":
+          description: Created – subsequent SSE events follow on same socket
 
 securityDefinitions: {}
 security: []
