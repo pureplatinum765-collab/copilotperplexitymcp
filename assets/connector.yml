@@ -1,0 +1,49 @@
+swagger: '2.0'
+info:
+  title: MCP Azure Server
+  description: Minimal MCP server for Copilot Studio
+  version: 1.0.0
+host: YOUR-WEB-APP-NAME.azurewebsites.net
+basePath: /
+schemes:
+  - https
+definitions:
+  QueryResponse:
+    type: object
+    properties:
+      jsonrpc:
+        type: string
+      id:
+        type: string
+      method:
+        type: string
+      params:
+        type: object
+      result:
+        type: object
+      error:
+        type: object
+paths:
+  /sse:
+    get:
+      summary: MCP Server SSE stream
+      description: Opens a long‑lived SSE stream that Copilot Studio consumes to discover tools and receive results.
+      parameters:
+        - in: query
+          name: sessionId
+          type: string
+          required: false
+          description: Arbitrary session correlation ID
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Immediate HTTP response; SSE events continue on the same connection
+          schema:
+            $ref: '#/definitions/QueryResponse'
+      operationId: InvokeMCP
+      tags:
+        - Agentic
+        - McpSse
+securityDefinitions: {}
+security: []
