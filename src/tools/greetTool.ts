@@ -3,7 +3,6 @@ import type { McpTool } from '../server';
 interface GreetInput {
   name?: string;
 }
-
 interface GreetOutput {
   greeting: string;
 }
@@ -21,9 +20,7 @@ export const greetTool: McpTool<GreetInput, GreetOutput> = {
     },
     output: {
       type: 'object',
-      properties: {
-        greeting: { type: 'string' }
-      }
+      properties: { greeting: { type: 'string' } }
     }
   },
   async invoke({ name }) {

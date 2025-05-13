@@ -29,7 +29,6 @@ app.get('/sse', (_req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  // announce tool list immediately
   res.write('event: tools\n');
   res.write(
     `data: ${JSON.stringify({
@@ -48,7 +47,7 @@ app.get('/sse', (_req, res) => {
 });
 
 // ---- Tool invocation ---------------------------------------------------
-app.post('/invoke/:toolName', async (req, res) => {
+app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   const tool = tools.find(t => t.name === req.params.toolName);
   if (!tool) return res.status(404).json({ error: 'Tool not found' });
 

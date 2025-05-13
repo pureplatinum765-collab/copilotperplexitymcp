@@ -3,14 +3,13 @@ import type { McpTool } from '../server';
 interface EchoInput {
   text: string;
 }
-
 interface EchoOutput {
   text: string;
 }
 
 export const echoTool: McpTool<EchoInput, EchoOutput> = {
   name: 'echo',
-  description: 'Returns the same text that you send',
+  description: 'Returns the same text you send.',
   schema: {
     input: {
       type: 'object',
