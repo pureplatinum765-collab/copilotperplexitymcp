@@ -1,42 +1,37 @@
 swagger: "2.0"
-
 info:
   title: Perplexity MCP Connector
   version: "1.0"
-  description: Server‑Sent Events endpoint that advertises MCP tools to Microsoft Copilot Studio.
-
-# ─── CHANGE THIS TO YOUR HOST ─────────────────────────────────────────────
+  description: Server‑Sent Events endpoint that advertises MCP tools to Microsoft Copilot Studio.
 host: perplexmcpcopilot-gcaba9h2d5g6azfx.uksouth-01.azurewebsites.net
-# ─────────────────────────────────────────────────────────────────────────
 basePath: /
-schemes: [https]
-
+schemes:
+  - https
 consumes:
   - application/json
 produces:
-  - text/event-stream            # designer lets you keep this
-
+  - text/event-stream
 paths:
   /sse:
     get:
       x-ms-sse: true
       operationId: StreamSse
       summary: MCP SSE Stream
-      description: >
-        Returns one Server‑Sent Event containing the tool list, then closes.
-      tags: [Agentic, McpSse]
+      description: Returns one Server‑Sent Event with the tool list, then closes.
+      tags:
+        - Agentic
+        - McpSse
       parameters:
         - name: sessionId
           in: query
           type: string
           required: false
       produces:
-        - text/event-stream       # keep consistency
+        - text/event-stream
       responses:
         "200":
           description: Stream opened
           schema:
-            type: string          # ← body is plain text, so validation passes
-
+            type: string
 securityDefinitions: {}
 security: []
