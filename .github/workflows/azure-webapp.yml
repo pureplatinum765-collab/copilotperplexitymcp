@@ -19,7 +19,7 @@ jobs:
 
       - name: npm install, build
         run: |
-          npm ci
+          npm install --no-fund --no-audit
           npm run build
 
       - name: 'Deploy to Azure Web App'
