@@ -1,7 +1,7 @@
-swagger: "2.0"
+swagger: '2.0'
 info:
   title: Perplexity MCP Connector
-  version: "1.0"
+  version: '1.0'
   description: Server‑Sent Events endpoint that advertises MCP tools to Microsoft Copilot Studio.
 host: perplexmcpcopilot-gcaba9h2d5g6azfx.uksouth-01.azurewebsites.net
 basePath: /
