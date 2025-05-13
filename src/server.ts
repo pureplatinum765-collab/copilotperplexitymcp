@@ -29,6 +29,7 @@ app.get('/sse', (_req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
+  // 1. send the tools list
   res.write('event: tools\n');
   res.write(
     `data: ${JSON.stringify({
@@ -44,7 +45,11 @@ app.get('/sse', (_req, res) => {
       }
     })}\n\n`
   );
+
+  // 2. immediately close – Copilot runtime expects that.
+  res.end();
 });
+
 
 // ---- Tool invocation ---------------------------------------------------
 app.post('/invoke/:toolName', async (req: Request, res: Response) => {
