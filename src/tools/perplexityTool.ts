@@ -12,9 +12,7 @@ interface PerplexityOutput {
   citations?: unknown[];
 }
 
-/** Fallback model if caller doesn’t supply one and no env var is set */
-const DEFAULT_MODEL =
-  process.env.PERPLEXITY_MODEL ?? 'sonar';
+const DEFAULT_MODEL = process.env.PERPLEXITY_MODEL ?? 'sonar';
 
 /** Standard (non-streaming) call to Perplexity API */
 async function callPerplexity(model: string, prompt: string) {
@@ -31,9 +29,7 @@ async function callPerplexity(model: string, prompt: string) {
   });
 
   if (!resp.ok) {
-    throw new Error(
-      `Perplexity error ${resp.status}: ${await resp.text()}`
-    );
+    throw new Error(`Perplexity error ${resp.status}: ${await resp.text()}`);
   }
 
   return resp.json();
@@ -73,7 +69,7 @@ export async function callPerplexityStream(
     buffer += decoder.decode(value, { stream: true });
 
     const lines = buffer.split('\n');
-    buffer = lines.pop() ?? ''; // Save incomplete line
+    buffer = lines.pop() ?? ''; // Preserve incomplete line
 
     for (const line of lines) {
       if (!line.startsWith('data: ')) continue;
@@ -84,21 +80,16 @@ export async function callPerplexityStream(
       try {
         const parsed = JSON.parse(jsonStr);
         const delta = parsed.choices?.[0]?.delta?.content;
-        if (delta) {
-          onChunk(delta); //  Emit only clean content string
-        }
+        if (delta) onChunk(delta);
       } catch {
-        // Skip bad chunks
+        // Ignore broken chunks
       }
     }
   }
 }
 
-/** MCP-compatible tool for Perplexity (non-streaming) */
-export const perplexityTool: McpTool<
-  PerplexityInput,
-  PerplexityOutput
-> = {
+/** Original non-streaming MCP tool */
+export const perplexityTool: McpTool<PerplexityInput, PerplexityOutput> = {
   name: 'perplexity.search',
   description: 'Queries Perplexity AI for an answer with citations.',
   schema: {
@@ -138,5 +129,42 @@ export const perplexityTool: McpTool<
       }
       throw err;
     }
+  }
+};
+
+/** New streaming MCP tool that accumulates response and returns it */
+export const perplexityStreamTool: McpTool<PerplexityInput, PerplexityOutput> = {
+  name: 'perplexity.search.stream',
+  description: 'Streams answer from Perplexity AI, token-by-token.',
+  schema: {
+    input: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string' },
+        model: { type: 'string', description: 'Perplexity model ID' }
+      },
+      required: ['prompt']
+    },
+    output: {
+      type: 'object',
+      properties: {
+        answer: { type: 'string' },
+        citations: { type: 'array', items: {} }
+      }
+    }
+  },
+
+  async invoke({ prompt, model }) {
+    const chosenModel = model || DEFAULT_MODEL;
+    let answer = '';
+
+    await callPerplexityStream(chosenModel, prompt, (chunk: string) => {
+      answer += chunk;
+    });
+
+    return {
+      answer,
+      citations: [] // Optional: Enhance to extract from stream later
+    };
   }
 };

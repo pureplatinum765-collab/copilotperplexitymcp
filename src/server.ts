@@ -3,7 +3,11 @@ import cors from 'cors';
 
 import { echoTool } from './tools/echoTool';
 import { greetTool } from './tools/greetTool';
-import { perplexityTool, callPerplexityStream } from './tools/perplexityTool';
+import {
+  perplexityTool,
+  perplexityStreamTool,
+  callPerplexityStream
+} from './tools/perplexityTool';
 
 export interface McpTool<TInput = any, TOutput = any> {
   name: string;
@@ -15,7 +19,13 @@ export interface McpTool<TInput = any, TOutput = any> {
   invoke(input: TInput): Promise<TOutput>;
 }
 
-const tools: McpTool[] = [echoTool, greetTool, perplexityTool];
+// 🔧 All tools, including streaming variant
+const tools: McpTool[] = [
+  echoTool,
+  greetTool,
+  perplexityTool,
+  perplexityStreamTool
+];
 
 const PORT = process.env.PORT || 8080;
 const app = express();
@@ -23,7 +33,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ---- SSE tool advertisement (for Copilot / Power Platform) ------------
+// ---- SSE advertisement for MCP tools -----------------------------------
 app.get('/sse', (_req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -45,10 +55,10 @@ app.get('/sse', (_req, res) => {
     })}\n\n`
   );
 
-  res.end(); // Copilot expects the stream to close after initial event
+  res.end(); // Copilot expects stream to close after list
 });
 
-// ---- Standard MCP tool invocation endpoint -----------------------------
+// ---- Generic MCP tool handler ------------------------------------------
 app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   const tool = tools.find(t => t.name === req.params.toolName);
   if (!tool) return res.status(404).json({ error: 'Tool not found' });
@@ -61,7 +71,7 @@ app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   }
 });
 
-// ---- Streaming endpoint for Perplexity API -----------------------------
+// ---- Standalone stream endpoint (for raw output testing) ---------------
 app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
   const { prompt, model } = req.body;
   const chosenModel = model || process.env.PERPLEXITY_MODEL || 'sonar';
@@ -72,7 +82,7 @@ app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
 
   try {
     await callPerplexityStream(chosenModel, prompt, (chunk: string) => {
-      res.write(chunk); // Only raw content is streamed
+      res.write(chunk);
     });
     res.end();
   } catch (err) {
