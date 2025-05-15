@@ -23,7 +23,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ---- SSE stream --------------------------------------------------------
+// ---- SSE tool advertisement (for Copilot / Power Platform) ------------
 app.get('/sse', (_req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -45,10 +45,10 @@ app.get('/sse', (_req, res) => {
     })}\n\n`
   );
 
-  res.end(); // Copilot expects the stream to end after sending tools
+  res.end(); // Copilot expects the stream to close after initial event
 });
 
-// ---- Tool invocation (MCP standard) ------------------------------------
+// ---- Standard MCP tool invocation endpoint -----------------------------
 app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   const tool = tools.find(t => t.name === req.params.toolName);
   if (!tool) return res.status(404).json({ error: 'Tool not found' });
@@ -61,7 +61,7 @@ app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   }
 });
 
-// ---- Streaming endpoint for Perplexity ---------------------------------
+// ---- Streaming endpoint for Perplexity API -----------------------------
 app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
   const { prompt, model } = req.body;
   const chosenModel = model || process.env.PERPLEXITY_MODEL || 'sonar';
@@ -72,7 +72,7 @@ app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
 
   try {
     await callPerplexityStream(chosenModel, prompt, (chunk: string) => {
-      res.write(chunk);
+      res.write(chunk); // Only raw content is streamed
     });
     res.end();
   } catch (err) {
