@@ -40,7 +40,7 @@ async function callPerplexity(model: string, prompt: string) {
   return resp.json();
 }
 
-/** Helper to stream from the Perplexity API */
+/** Helper to stream Perplexity response content token-by-token */
 export async function callPerplexityStream(
   model: string,
   prompt: string,
@@ -71,7 +71,21 @@ export async function callPerplexityStream(
     if (done) break;
 
     const chunk = decoder.decode(value, { stream: true });
-    onChunk(chunk);
+
+    // Handle Perplexity's streamed chunks: "data: { ... }"
+    const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+    for (const line of lines) {
+      const jsonStr = line.replace(/^data: /, '').trim();
+      if (jsonStr === '[DONE]') continue;
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const delta = parsed.choices?.[0]?.delta?.content;
+        if (delta) onChunk(delta);
+      } catch {
+        // Ignore malformed chunks
+      }
+    }
   }
 }
 
