@@ -65,7 +65,7 @@ app.post('/invoke/:toolName', async (req: Request, res: Response) => {
 
   try {
     const result = await tool.invoke(req.body);
-    res.json(result);
+    res.json({ jsonrpc: '2.0', id: Date.now().toString(), result });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? 'Unknown error' });
   }
