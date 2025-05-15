@@ -3,7 +3,7 @@ import cors from 'cors';
 
 import { echoTool } from './tools/echoTool';
 import { greetTool } from './tools/greetTool';
-import { perplexityTool } from './tools/perplexityTool';
+import { perplexityTool, callPerplexityStream } from './tools/perplexityTool';
 
 export interface McpTool<TInput = any, TOutput = any> {
   name: string;
@@ -18,7 +18,7 @@ export interface McpTool<TInput = any, TOutput = any> {
 const tools: McpTool[] = [echoTool, greetTool, perplexityTool];
 
 const PORT = process.env.PORT || 8080;
-const app  = express();
+const app = express();
 
 app.use(cors());
 app.use(express.json());
@@ -29,7 +29,6 @@ app.get('/sse', (_req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  // 1. send the tools list
   res.write('event: tools\n');
   res.write(
     `data: ${JSON.stringify({
@@ -38,20 +37,18 @@ app.get('/sse', (_req, res) => {
       method: 'tools',
       params: {
         tools: tools.map(t => ({
-          name:        t.name,
+          name: t.name,
           description: t.description,
-          schema:      t.schema
+          schema: t.schema
         }))
       }
     })}\n\n`
   );
 
-  // 2. immediately close – Copilot runtime expects that.
-  res.end();
+  res.end(); // Copilot expects the stream to end after sending tools
 });
 
-
-// ---- Tool invocation ---------------------------------------------------
+// ---- Tool invocation (MCP standard) ------------------------------------
 app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   const tool = tools.find(t => t.name === req.params.toolName);
   if (!tool) return res.status(404).json({ error: 'Tool not found' });
@@ -64,7 +61,27 @@ app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   }
 });
 
-// ---- health ------------------------------------------------------------
+// ---- Streaming endpoint for Perplexity ---------------------------------
+app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
+  const { prompt, model } = req.body;
+  const chosenModel = model || process.env.PERPLEXITY_MODEL || 'sonar';
+
+  res.setHeader('Content-Type', 'text/plain');
+  res.setHeader('Transfer-Encoding', 'chunked');
+  res.setHeader('Cache-Control', 'no-cache');
+
+  try {
+    await callPerplexityStream(chosenModel, prompt, (chunk: string) => {
+      res.write(chunk);
+    });
+    res.end();
+  } catch (err) {
+    console.error('Streaming error:', err);
+    res.status(500).send(`Streaming error: ${err}`);
+  }
+});
+
+// ---- Health check ------------------------------------------------------
 app.get('/', (_req, res) => res.send('👌 MCP server up'));
 
 app.listen(PORT, () => console.log(`MCP server listening on :${PORT}`));

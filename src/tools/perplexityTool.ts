@@ -15,16 +15,15 @@ interface PerplexityOutput {
 
 /** Fallback model if caller doesn’t supply one and no env var is set */
 const DEFAULT_MODEL =
-  process.env.PERPLEXITY_MODEL /* override via App Setting */ ??
-  'sonar';        /* hard‑coded default */
+  process.env.PERPLEXITY_MODEL /* override via App Setting */ ?? 'sonar';
 
-/** Helper to call the Perplexity API */
+/** Helper to call the Perplexity API (non-streaming) */
 async function callPerplexity(model: string, prompt: string) {
   const resp = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-      'Content-Type':  'application/json'
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       model,
@@ -37,9 +36,46 @@ async function callPerplexity(model: string, prompt: string) {
       `Perplexity error ${resp.status}: ${await resp.text()}`
     );
   }
+
   return resp.json();
 }
 
+/** Helper to stream from the Perplexity API */
+export async function callPerplexityStream(
+  model: string,
+  prompt: string,
+  onChunk: (chunk: string) => void
+) {
+  const resp = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      stream: true,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!resp.ok || !resp.body) {
+    throw new Error(`Perplexity stream error ${resp.status}: ${await resp.text()}`);
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value, { stream: true });
+    onChunk(chunk);
+  }
+}
+
+/** MCP tool definition for non-streaming use */
 export const perplexityTool: McpTool<
   PerplexityInput,
   PerplexityOutput
@@ -51,14 +87,14 @@ export const perplexityTool: McpTool<
       type: 'object',
       properties: {
         prompt: { type: 'string' },
-        model:  { type: 'string', description: 'Perplexity model ID' }
+        model: { type: 'string', description: 'Perplexity model ID' }
       },
       required: ['prompt']
     },
     output: {
       type: 'object',
       properties: {
-        answer:    { type: 'string' },
+        answer: { type: 'string' },
         citations: { type: 'array', items: {} }
       }
     }
@@ -67,19 +103,17 @@ export const perplexityTool: McpTool<
   async invoke({ prompt, model }) {
     const chosenModel = model || DEFAULT_MODEL;
 
-    /* Attempt once with requested/default model */
     try {
       const data = await callPerplexity(chosenModel, prompt);
       return {
-        answer:    data.choices?.[0]?.message?.content ?? '',
+        answer: data.choices?.[0]?.message?.content ?? '',
         citations: data.choices?.[0]?.citations ?? []
       };
     } catch (err: any) {
-      /* If model was auto‑selected and failed, fall back to sonar */
       if (!model && chosenModel !== 'sonar') {
         const data = await callPerplexity('sonar', prompt);
         return {
-          answer:    data.choices?.[0]?.message?.content ?? '',
+          answer: data.choices?.[0]?.message?.content ?? '',
           citations: data.choices?.[0]?.citations ?? []
         };
       }
