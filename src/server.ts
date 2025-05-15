@@ -95,3 +95,32 @@ app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
 app.get('/', (_req, res) => res.send('👌 MCP server up'));
 
 app.listen(PORT, () => console.log(`MCP server listening on :${PORT}`));
+// ---- SSE endpoint for streaming Perplexity output ----------------------
+app.get('/sse/perplexity.search', async (req: Request, res: Response) => {
+  const prompt = req.query.prompt as string;
+  const model = (req.query.model as string) || process.env.PERPLEXITY_MODEL || 'sonar';
+
+  if (!prompt) {
+    res.status(400).json({ error: 'Missing ?prompt= query parameter' });
+    return;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  try {
+    await callPerplexityStream(model, prompt, (chunk: string) => {
+      // Format as SSE: "event: token\ndata: ...\n\n"
+      res.write(`event: token\n`);
+      res.write(`data: ${chunk.trim()}\n\n`);
+    });
+
+    res.write(`event: done\ndata: [DONE]\n\n`);
+    res.end();
+  } catch (err) {
+    console.error('SSE stream error:', err);
+    res.write(`event: error\ndata: ${err}\n\n`);
+    res.end();
+  }
+});
