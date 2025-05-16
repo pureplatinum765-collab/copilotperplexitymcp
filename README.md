@@ -10,7 +10,7 @@ A lightweight Model Context Protocol (MCP) server—built with TypeScript + Expr
 | Hosting | Azure App Service for Linux (Basic B1 or higher) — container runtime uses the built-in NODE |
 | CI/CD | GitHub Actions (Ubuntu runners) via `azure/webapps-deploy@v3` |
 | MCP client | Microsoft Copilot Studio agents (Generative actions / "AI Plugin" preview)<br>Power Automate / Logic Apps (custom connector actions) |
-| LLM back-end | Perplexity AI REST API — any current public model (default `sonar-small-online`, but overridable) |
+| LLM back-end | Perplexity AI REST API — any current public model (default `sonar`, but overridable) |
 | Local dev / testing | macOS, Windows, WSL2, or Linux with Node 20 + npm 10; cURL or Postman for raw SSE tests |
 
 No other cloud services or proprietary dependencies are required—the repo is cloud-agnostic beyond Azure Web App and uses only standard HTTP + SSE.
