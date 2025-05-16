@@ -71,6 +71,36 @@ app.post('/invoke/:toolName', async (req: Request, res: Response) => {
   }
 });
 
+// ---- POST /query endpoint for Power Platform connector -----------------
+app.post('/query', async (req: Request, res: Response) => {
+  const { prompt, model } = req.body;
+
+  if (!prompt) {
+    return res.status(400).json({ error: 'Missing prompt in request body' });
+  }
+
+  try {
+    const chosenModel = model || process.env.PERPLEXITY_MODEL || 'sonar';
+
+    let output = '';
+    await callPerplexityStream(chosenModel, prompt, (chunk: string) => {
+      output += chunk;
+    });
+
+    res.status(200).json({
+      jsonrpc: '2.0',
+      id: Date.now().toString(),
+      result: {
+        answer: output.trim(),
+        citations: []
+      }
+    });
+  } catch (err: any) {
+    console.error('Error handling POST /query:', err);
+    res.status(500).json({ error: err?.message || 'Unknown error occurred' });
+  }
+});
+
 // ---- Standalone stream endpoint (for raw output testing) ---------------
 app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
   const { prompt, model } = req.body;
@@ -94,7 +124,6 @@ app.post('/stream/perplexity.search', async (req: Request, res: Response) => {
 // ---- Health check ------------------------------------------------------
 app.get('/', (_req, res) => res.send('👌 MCP server up'));
 
-app.listen(PORT, () => console.log(`MCP server listening on :${PORT}`));
 // ---- SSE endpoint for streaming Perplexity output ----------------------
 app.get('/sse/perplexity.search', async (req: Request, res: Response) => {
   const prompt = req.query.prompt as string;
@@ -111,7 +140,6 @@ app.get('/sse/perplexity.search', async (req: Request, res: Response) => {
 
   try {
     await callPerplexityStream(model, prompt, (chunk: string) => {
-      // Format as SSE: "event: token\ndata: ...\n\n"
       res.write(`event: token\n`);
       res.write(`data: ${chunk.trim()}\n\n`);
     });
@@ -124,3 +152,5 @@ app.get('/sse/perplexity.search', async (req: Request, res: Response) => {
     res.end();
   }
 });
+
+app.listen(PORT, () => console.log(`MCP server listening on :${PORT}`));
