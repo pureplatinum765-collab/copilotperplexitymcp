@@ -92,3 +92,9 @@ GET /sse
 POST /invoke/perplexity.search
 ```
 —indicating the agent discovered the tools and invoked the one it needed.
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/ITSpecialist" target="_blank">
+    <img src="https://img.shields.io/badge/Buy&nbsp;me&nbsp;a&nbsp;coffee-Support&nbsp;Dev-yellow?style=for-the-badge&logo=buy-me-a-coffee" alt="Buy Me A Coffee">
+  </a>
+</p>
