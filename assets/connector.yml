@@ -1,85 +1,56 @@
 swagger: '2.0'
 info:
-  title: MCP Perplexity Tools
-  description: Tools exposed by your MCP server that query Perplexity AI.
-  version: 1.0.0
+  title: Perplexity MCP
+  version: '1.0'
 host: perplexmcpcopilot-gcaba9h2d5g6azfx.uksouth-01.azurewebsites.net
 basePath: /
 schemes:
   - https
-consumes:
-  - application/json
-produces:
-  - application/json
 paths:
-  /invoke/perplexity.search:
+  /query:
     post:
-      tags:
-        - Agentic
-        - McpSse
-      summary: Queries Perplexity AI and returns full answer.
+      summary: Query Perplexity
       operationId: perplexity-search
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
         - in: body
           name: body
           required: true
           schema:
             type: object
-            required:
-              - prompt
             properties:
               prompt:
                 type: string
               model:
                 type: string
-                description: Perplexity model ID
-      responses:
-        '200':
-          description: Success
-          schema:
-            type: object
-            properties:
-              answer:
-                type: string
-              citations:
-                type: array
-                items: {}
-  /invoke/perplexity.search.stream:
-    post:
-      tags:
-        - Agentic
-        - McpSse
-      summary: Streams Perplexity AI response and returns full text at the end.
-      operationId: perplexity-search-stream
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            type: object
             required:
               - prompt
-            properties:
-              prompt:
-                type: string
-              model:
-                type: string
-                description: Perplexity model ID
       responses:
         '200':
-          description: Success
+          description: Successful response
           schema:
             type: object
             properties:
-              answer:
+              jsonrpc:
                 type: string
-              citations:
-                type: array
-                items: {}
+              id:
+                type: string
+              result:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                  citations:
+                    type: array
+                    items: {}
 securityDefinitions: {}
-security: []
 x-ms-openai-manifest:
-  humanName: Perplexity AI MCP
-  modelDescription: MCP server accessing Perplexity AI
+  humanName: Perplexity AI MCP Server
+  modelDescription: >-
+    This Connector Links through an Azure WebApp for MCP server to serve
+    Perplexity Requests to Copilot Studio
   contactEmail: graham@hosking.wales
   legalUrl: https://aka.ms/grahamhosking
