@@ -2,7 +2,7 @@ swagger: '2.0'
 info:
   title: Perplexity MCP
   version: '1.0'
-host: perplexmcpcopilot-gcaba9h2d5g6azfx.uksouth-01.azurewebsites.net
+host: <your-app>.azurewebsites.net
 basePath: /
 schemes:
   - https
@@ -46,11 +46,3 @@ paths:
                   citations:
                     type: array
                     items: {}
-securityDefinitions: {}
-x-ms-openai-manifest:
-  humanName: Perplexity AI MCP Server
-  modelDescription: >-
-    This Connector Links through an Azure WebApp for MCP server to serve
-    Perplexity Requests to Copilot Studio
-  contactEmail: graham@hosking.wales
-  legalUrl: https://aka.ms/grahamhosking
