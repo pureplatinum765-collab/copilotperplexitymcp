@@ -1,6 +1,29 @@
 # Copilot + Perplexity MCP Server ✨ 
 
-A lightweight Model Context Protocol (MCP) server—built with TypeScript + Express, deployable to an Azure Linux Web App—that streams its tool catalog via a single Server-Sent Events endpoint and exposes `echo`, `greet`, and `perplexity.search` functions so Microsoft Copilot Studio agents (through a minimal Swagger-based custom connector) and Power Automate flows can invoke them for real-time, citation-backed answers from Perplexity AI.
+A lightweight Model Context Protocol (MCP) server—built with TypeScript + Express, deployable to an Azure Linux Web App—that streams its tool catalog via a single Server-Sent Events endpoint and exposes `echo`, `greet`, `perplexity.search`, and a suite of `github.*` tools (optionally routed through StackOne) so Microsoft Copilot Studio agents, Power Automate flows, and **Perplexity Enterprise Max** can invoke them for real-time, citation-backed answers from Perplexity AI and live data from GitHub.
+
+## StackOne ↔ GitHub ↔ Perplexity bridge
+
+The repo now ships a complete bridge that lets Perplexity Enterprise Max (or any MCP client) query GitHub through this server, optionally routed through StackOne as an intermediary.
+
+| Tool | Purpose |
+|------|---------|
+| `github.list_repositories` | List repos for a user/org or the authenticated user |
+| `github.get_repository`    | Fetch a single repo's metadata |
+| `github.list_issues`       | List issues with state/label/assignee filters |
+| `github.search_issues`     | Full GitHub search syntax across issues/PRs |
+| `github.list_pull_requests`| List PRs with state/base/head filters |
+| `github.get_user`          | Authenticated or arbitrary user profile |
+
+Auth: both PAT (default fallback via `GITHUB_TOKEN`) and OAuth 2.0 (per-user via `/auth/github/start` → `/auth/github/callback`, with refresh-token support for GitHub Apps) are supported out of the box.
+
+Backend: the adapter auto-selects — StackOne when `STACKONE_API_KEY` is set, GitHub-direct otherwise. Operations StackOne can't serve fall through to GitHub-direct so the tool surface stays stable.
+
+- Setup: [docs/STACKONE_GITHUB_SETUP.md](docs/STACKONE_GITHUB_SETUP.md)
+- Example queries: [docs/EXAMPLES.md](docs/EXAMPLES.md)
+- Env template: [`.env.example`](.env.example)
+- Swagger for the new endpoints: [`assets/github_connector.yml`](assets/github_connector.yml)
+
 
 ## Compatibility Summary
 

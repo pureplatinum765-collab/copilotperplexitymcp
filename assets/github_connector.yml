@@ -1,0 +1,154 @@
+swagger: '2.0'
+info:
+  title: StackOne GitHub MCP Bridge
+  description: |
+    MCP-compliant endpoints that expose GitHub data (optionally via StackOne)
+    to Perplexity Enterprise Max, Microsoft Copilot Studio, or any tool that
+    can call HTTP + SSE.
+  version: '1.0'
+host: <your-app>.azurewebsites.net
+basePath: /
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /sse:
+    get:
+      summary: List MCP tools
+      description: Server-Sent Events stream that emits a single `event: tools` message containing the catalogue.
+      operationId: mcp-tools-list
+      responses:
+        '200':
+          description: SSE stream with tool catalogue
+  /invoke/{toolName}:
+    post:
+      summary: Invoke an MCP tool by name
+      operationId: mcp-invoke
+      parameters:
+        - in: path
+          name: toolName
+          required: true
+          type: string
+          enum:
+            - echo
+            - greet
+            - perplexity.search
+            - perplexity.search.stream
+            - github.list_repositories
+            - github.get_repository
+            - github.list_issues
+            - github.search_issues
+            - github.list_pull_requests
+            - github.get_user
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+      responses:
+        '200':
+          description: Tool result
+          schema:
+            type: object
+            properties:
+              jsonrpc:
+                type: string
+              id:
+                type: string
+              result:
+                type: object
+        '400':
+          description: Validation error or unknown tool
+        '401':
+          description: Auth error (no token configured / OAuth not completed)
+        '404':
+          description: Upstream resource not found
+        '429':
+          description: Rate limited by GitHub or StackOne
+  /auth/github/start:
+    get:
+      summary: Begin GitHub OAuth flow
+      operationId: github-oauth-start
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          type: string
+          description: Identifier that the token will be stored under.
+        - in: query
+          name: scope
+          required: false
+          type: string
+          default: repo read:user
+        - in: query
+          name: return_to
+          required: false
+          type: string
+          description: URL to redirect the browser to after callback success.
+      responses:
+        '302':
+          description: Redirect to GitHub authorize endpoint
+  /auth/github/callback:
+    get:
+      summary: GitHub OAuth callback
+      operationId: github-oauth-callback
+      parameters:
+        - in: query
+          name: code
+          required: true
+          type: string
+        - in: query
+          name: state
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Token stored
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              user_id:
+                type: string
+        '302':
+          description: Redirect to return_to (when supplied at /auth/github/start)
+  /auth/github/revoke:
+    post:
+      summary: Revoke a stored GitHub OAuth token (local revoke only)
+      operationId: github-oauth-revoke
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            required: [user_id]
+            properties:
+              user_id:
+                type: string
+      responses:
+        '200':
+          description: Token removed from local store
+  /healthz:
+    get:
+      summary: Health check
+      operationId: healthz
+      responses:
+        '200':
+          description: Server health and adapter selection
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              adapter:
+                type: string
+                enum: [github-direct, stackone]
+              oauth_configured:
+                type: boolean
+              pat_configured:
+                type: boolean
