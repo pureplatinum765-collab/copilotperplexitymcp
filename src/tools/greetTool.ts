@@ -1,29 +1,16 @@
-import type { McpTool } from '../server';
+import { ToolDefinition } from '../adapters/types';
 
-interface GreetInput {
-  name?: string;
-}
-interface GreetOutput {
-  greeting: string;
-}
-
-export const greetTool: McpTool<GreetInput, GreetOutput> = {
+export const greetTool: ToolDefinition = {
   name: 'greet',
-  description: 'Sends a friendly greeting.',
-  schema: {
-    input: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', description: 'Name to greet', default: 'friend' }
-      },
-      required: []
+  description: 'Returns a greeting for the given name.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Name to greet' }
     },
-    output: {
-      type: 'object',
-      properties: { greeting: { type: 'string' } }
-    }
+    required: ['name']
   },
-  async invoke({ name }) {
-    return { greeting: `Hello ${name ?? 'friend'}!` };
+  async execute(args: { name: string }) {
+    return { greeting: `Hello, ${args.name}!` };
   }
 };

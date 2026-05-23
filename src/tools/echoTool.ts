@@ -1,27 +1,16 @@
-import type { McpTool } from '../server';
+import { ToolDefinition } from '../adapters/types';
 
-interface EchoInput {
-  text: string;
-}
-interface EchoOutput {
-  text: string;
-}
-
-export const echoTool: McpTool<EchoInput, EchoOutput> = {
+export const echoTool: ToolDefinition = {
   name: 'echo',
-  description: 'Returns the same text you send.',
-  schema: {
-    input: {
-      type: 'object',
-      properties: { text: { type: 'string' } },
-      required: ['text']
+  description: 'Echoes the input message back.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      message: { type: 'string', description: 'Message to echo' }
     },
-    output: {
-      type: 'object',
-      properties: { text: { type: 'string' } }
-    }
+    required: ['message']
   },
-  async invoke(input) {
-    return { text: input.text };
+  async execute(args: { message: string }) {
+    return { echo: args.message };
   }
 };
